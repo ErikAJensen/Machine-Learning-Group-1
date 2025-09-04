@@ -81,7 +81,7 @@ def build_rf_pipeline(n_components=150):
         )),
         ("svd", TruncatedSVD(n_components=n_components, random_state=42)),
         ("clf", RandomForestClassifier(
-            n_estimators=800,
+            n_estimators=1000,
             max_features="sqrt",
             min_samples_leaf=2,
             class_weight="balanced_subsample",
