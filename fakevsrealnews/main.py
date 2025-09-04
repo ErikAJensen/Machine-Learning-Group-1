@@ -1,6 +1,3 @@
-# main.py — Random Forest med tekstlig oppsummering av riktige/feil gjetninger
-# Kjør:  python main.py
-
 from pathlib import Path
 import numpy as np
 import pandas as pd
