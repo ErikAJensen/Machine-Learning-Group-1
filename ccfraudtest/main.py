@@ -15,7 +15,7 @@ def main():
     df = pd.read_csv(
         os.path.join(
             script_dir,
-            "data/credit-card-fraud-detection-dataset-2023/creditcard_2023.csv",
+            "data//creditcard_2023.csv",
         )
     )
 
