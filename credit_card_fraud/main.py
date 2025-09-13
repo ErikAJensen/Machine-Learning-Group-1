@@ -57,7 +57,7 @@ def main():
     print(f"Recall:     {rec:.4f}")
     print(f"F1-score:   {f1:.4f}")
     print(f"ROC-AUC:    {roc:.4f}")
-    print(f"PR-AUC:     {pr_auc:.4f} (PR-AUC er viktig ved ubalanse)")
+    print(f"PR-AUC:     {pr_auc:.4f} ")
 
     # --- Confusion matrix + prosent ---
     cm = confusion_matrix(y_test, y_pred)
