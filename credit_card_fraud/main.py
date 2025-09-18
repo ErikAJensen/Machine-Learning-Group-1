@@ -16,7 +16,7 @@ N_ESTIMATORS  = 300
 MAX_DEPTH     = 12
 
 def main():
-    # --- Les data (samme mappe som main.py) ---
+    # --- Les data---
     script_dir = os.path.dirname(os.path.abspath(__file__))
     csv_path = os.path.join(script_dir, "creditcard.csv")
     if not os.path.exists(csv_path):
@@ -38,7 +38,7 @@ def main():
     # --- Stratified K-Fold ---
     cv = StratifiedKFold(n_splits=N_SPLITS, shuffle=True, random_state=RANDOM_SEED)
 
-    # --- CV-scorer (mean ± std) ---
+    # --- CV-scorer---
     pr_auc  = cross_val_score(clf, X, y, cv=cv, scoring="average_precision", n_jobs=-1)
     roc_auc = cross_val_score(clf, X, y, cv=cv, scoring="roc_auc",           n_jobs=-1)
     f1      = cross_val_score(clf, X, y, cv=cv, scoring="f1",                n_jobs=-1)
@@ -55,7 +55,6 @@ def main():
     # --- Samlet OOF-prediksjon for confusion matrix og prosent riktig/feil ---
     # Predict (labels) via CV
     y_pred_oof = cross_val_predict(clf, X, y, cv=cv, method="predict", n_jobs=-1)
-    # Proba kan være nyttig om du senere vil terskel-tune
     # y_proba_oof = cross_val_predict(clf, X, y, cv=cv, method="predict_proba", n_jobs=-1)[:, 1]
 
     cm = confusion_matrix(y, y_pred_oof)
@@ -70,7 +69,7 @@ def main():
     print(f"Riktig:  {correct} ({correct/total:.2%})")
     print(f"Feil:    {wrong} ({wrong/total:.2%})")
 
-    # Ekstra samlet mål (OOF):
+    # Ekstra samlet mål:
     acc_oof  = accuracy_score(y, y_pred_oof)
     f1_oof   = f1_score(y, y_pred_oof, average="binary", zero_division=0)
     rec_oof  = recall_score(y, y_pred_oof, average="binary", zero_division=0)
