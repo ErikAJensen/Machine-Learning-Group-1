@@ -44,11 +44,13 @@ def main():
     f1      = cross_val_score(clf, X, y, cv=cv, scoring="f1",                n_jobs=-1)
     recall  = cross_val_score(clf, X, y, cv=cv, scoring="recall",            n_jobs=-1)
 
-    print("\n=== Stratified K-Fold ({} folds) ===".format(N_SPLITS))
-    print(f"PR-AUC:   {pr_auc.mean():.4f} ± {pr_auc.std():.4f}")
-    print(f"ROC-AUC:  {roc_auc.mean():.4f} ± {roc_auc.std():.4f}")
-    print(f"F1:       {f1.mean():.4f} ± {f1.std():.4f}")
-    print(f"Recall:   {recall.mean():.4f} ± {recall.std():.4f}")
+    print("\n=== Resultater ===")
+    print(f"Accuracy:   {acc:.4f}")
+    print(f"Precision:  {prec:.4f}")
+    print(f"Recall:     {rec:.4f}")
+    print(f"F1-score:   {f1:.4f}")
+    print(f"ROC-AUC:    {roc:.4f}")
+    print(f"PR-AUC:     {pr_auc:.4f} ")
 
     # --- Samlet OOF-prediksjon for confusion matrix og prosent riktig/feil ---
     # Predict (labels) via CV
