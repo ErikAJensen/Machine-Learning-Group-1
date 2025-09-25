@@ -24,7 +24,7 @@ def evaluate(y, proba, name):
     print(confusion_matrix(y, pred))
     print(classification_report(y, pred, digits=4))
 
-    # best F1 threshold
+    # F1 threshold
     prec, rec, thr = precision_recall_curve(y, proba)
     f1 = 2*prec*rec/(prec+rec+1e-12)
     best_thr = thr[np.nanargmax(f1)] if len(thr) else 0.5
