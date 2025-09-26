@@ -13,3 +13,8 @@ dependencies = [
 
 [tool.ruff]
 line-length = 125
+
+[tool.basedpyright]
+venvPath = "."
+venv = ".venv"
+typeCheckingMode = "basic"

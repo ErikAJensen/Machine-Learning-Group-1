@@ -1,21 +1,22 @@
 import os
 from time import time
+
 import joblib
 import pandas as pd
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import (
     accuracy_score,
+    average_precision_score,
+    f1_score,
     fbeta_score,
     make_scorer,
     precision_score,
     recall_score,
-    f1_score,
-    average_precision_score,
     roc_auc_score,
 )
-from state import RANDOM_STATE
+from sklearn.model_selection import GridSearchCV
+from sklearn.tree import DecisionTreeClassifier
 
+from state import RANDOM_STATE
 
 MODEL_FILE = os.path.splitext(os.path.abspath(__file__))[0] + ".pkl"
 
