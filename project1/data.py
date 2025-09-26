@@ -1,11 +1,13 @@
-import requests
-import zipfile
 import io
 import os
+import zipfile
+
 import pandas as pd
+import requests
+from imblearn.over_sampling import ADASYN
 from sklearn.discriminant_analysis import StandardScaler
 from sklearn.model_selection import train_test_split
-from imblearn.over_sampling import ADASYN
+
 from state import RANDOM_STATE
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
