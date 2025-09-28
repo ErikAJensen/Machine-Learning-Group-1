@@ -3,6 +3,9 @@ from time import time
 
 import joblib
 import pandas as pd
+from imblearn.over_sampling import ADASYN
+from imblearn.pipeline import Pipeline
+from sklearn.compose import ColumnTransformer
 from sklearn.metrics import (
     accuracy_score,
     average_precision_score,
@@ -14,53 +17,59 @@ from sklearn.metrics import (
     roc_auc_score,
 )
 from sklearn.model_selection import GridSearchCV
+from sklearn.preprocessing import StandardScaler
 from sklearn.tree import DecisionTreeClassifier
 
-from state import RANDOM_STATE
+from constants import DATA_PROCESSED_DIR, RANDOM_STATE
 
 MODEL_FILE = os.path.splitext(os.path.abspath(__file__))[0] + ".pkl"
 
 
-def cart(X_train, y_train):
+def cart(X, y):
+    print("\nDecisionTreeClassifier (CART) with hyperparameter tuning")
+
     dtree = DecisionTreeClassifier(random_state=RANDOM_STATE)
 
+    pipeline = Pipeline(
+        [
+            (
+                "scaler",
+                ColumnTransformer(transformers=[("amount_scaler", StandardScaler(), ["Amount"])], remainder="passthrough"),
+            ),
+            ("adasyn", ADASYN(random_state=RANDOM_STATE)),
+            ("clf", dtree),
+        ]
+    )
+
     param_grid = {
-        "max_depth": [5, 10, 15, 20, 25, None],
-        "min_samples_split": [2, 5, 10, 20],
-        "min_samples_leaf": [1, 2, 3, 4, 5, 10],
-        "criterion": ["gini", "entropy"],
+        "clf__max_depth": [5, 10, 15, 20, 25, None],
+        "clf__min_samples_split": [2, 5, 10, 20],
+        "clf__min_samples_leaf": [1, 2, 3, 5, 10],
+        "clf__criterion": ["gini", "entropy"],
     }
 
     f2_scorer = make_scorer(fbeta_score, beta=2)
 
-    grid_search = GridSearchCV(dtree, param_grid, scoring=f2_scorer, cv=5, n_jobs=-1, verbose=1)
-
-    print("\nDecisionTreeClassifier")
+    grid_search = GridSearchCV(pipeline, param_grid, scoring=f2_scorer, cv=5, n_jobs=-1, verbose=1)
 
     start = time()
-    grid_search.fit(X_train, y_train)
+    grid_search.fit(X, y)
     end = time()
-    best_model = grid_search.best_estimator_
 
     print(f"Grid search completed in {end - start:.2f} seconds")
-    print("Best hyperparameters:", grid_search.best_params_)
+    print(f"Best hyperparameters: {grid_search.best_params_}")
 
-    return best_model
+    return grid_search.best_estimator_
 
 
 def main():
-    train_df = pd.read_csv("data/processed/123/training.csv")
-    valid_df = pd.read_csv("data/processed/123/validation.csv")
-    test_df = pd.read_csv("data/processed/123/test.csv")
+    train_df = pd.read_csv(os.path.join(DATA_PROCESSED_DIR, str(RANDOM_STATE), "training.csv"))
+    test_df = pd.read_csv(os.path.join(DATA_PROCESSED_DIR, str(RANDOM_STATE), "test.csv"))
 
     X_train, y_train = train_df.drop(columns=["Class"]), train_df["Class"]
-    X_valid, y_valid = valid_df.drop(columns=["Class"]), valid_df["Class"]
     X_test, y_test = test_df.drop(columns=["Class"]), test_df["Class"]
 
-    X_grid = pd.concat([X_train, X_valid])
-    y_grid = pd.concat([y_train, y_valid])
-
-    best_model = cart(X_grid, y_grid)
+    best_model = cart(X_train, y_train)
 
     y_pred = best_model.predict(X_test)
     y_proba = best_model.predict_proba(X_test)[:, 1]

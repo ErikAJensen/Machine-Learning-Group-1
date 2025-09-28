@@ -4,16 +4,9 @@ import zipfile
 
 import pandas as pd
 import requests
-from imblearn.over_sampling import ADASYN
-from sklearn.discriminant_analysis import StandardScaler
 from sklearn.model_selection import train_test_split
 
-from state import RANDOM_STATE
-
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(SCRIPT_DIR, "data")
-DATA_RAW_DIR = os.path.join(DATA_DIR, "raw")
-DATA_PROCESSED_DIR = os.path.join(DATA_DIR, "processed")
+from constants import DATA_PROCESSED_DIR, DATA_RAW_DIR, RANDOM_STATE
 
 TRAIN_RATIO = 0.6
 VALID_RATIO = 0.2
@@ -53,10 +46,6 @@ def main():
 
     df = pd.read_csv(os.path.join(DATA_RAW_DIR, "creditcard.csv"))
 
-    scaler = StandardScaler()
-    df["Amount_scaled"] = scaler.fit_transform(df[["Amount"]])
-    df = df.drop(columns=["Amount"])
-
     X = df.drop(columns=["Class"])
     y = df["Class"]
 
@@ -67,10 +56,7 @@ def main():
         X_temp, y_temp, train_size=valid_ratio_adjusted, random_state=RANDOM_STATE, stratify=y_temp
     )
 
-    adasyn = ADASYN(random_state=RANDOM_STATE)
-    X_train_res, y_train_res = adasyn.fit_resample(X_train, y_train)
-
-    train_df = pd.concat([X_train_res, y_train_res], axis=1)
+    train_df = pd.concat([X_train, y_train], axis=1)
     valid_df = pd.concat([X_valid, y_valid], axis=1)
     test_df = pd.concat([X_test, y_test], axis=1)
 
