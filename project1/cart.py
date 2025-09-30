@@ -50,7 +50,14 @@ def cart(X, y):
 
     f2_scorer = make_scorer(fbeta_score, beta=2)
 
-    grid_search = GridSearchCV(pipeline, param_grid, scoring=f2_scorer, cv=StratifiedKFold(5, shuffle=True, random_state=RANDOM_STATE), n_jobs=-1, verbose=1)
+    grid_search = GridSearchCV(
+        pipeline,
+        param_grid,
+        scoring=f2_scorer,
+        cv=StratifiedKFold(5, shuffle=True, random_state=RANDOM_STATE),
+        n_jobs=-1,
+        verbose=1,
+    )
 
     start = time()
     grid_search.fit(X, y)

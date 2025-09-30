@@ -25,7 +25,6 @@ from constants import DATA_PROCESSED_DIR, MODELS_DIR, RANDOM_STATE
 MODEL_FILE = os.path.join(MODELS_DIR, str(RANDOM_STATE), "random_forest.pkl")
 
 
-
 def random_forest(X, y):
     print("\nRandomForestClassifier with hyperparameter tuning")
 
