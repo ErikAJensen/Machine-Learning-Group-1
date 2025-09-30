@@ -16,13 +16,13 @@ from sklearn.metrics import (
     recall_score,
     roc_auc_score,
 )
-from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import GridSearchCV, StratifiedKFold
 from sklearn.preprocessing import StandardScaler
 from sklearn.tree import DecisionTreeClassifier
 
-from constants import DATA_PROCESSED_DIR, RANDOM_STATE
+from constants import DATA_PROCESSED_DIR, MODELS_DIR, RANDOM_STATE
 
-MODEL_FILE = os.path.splitext(os.path.abspath(__file__))[0] + ".pkl"
+MODEL_FILE = os.path.join(MODELS_DIR, str(RANDOM_STATE), "cart.pkl")
 
 
 def cart(X, y):
@@ -42,7 +42,7 @@ def cart(X, y):
     )
 
     param_grid = {
-        "clf__max_depth": [5, 10, 15, 20, 25, None],
+        "clf__max_depth": [5, 10, 15, 20, 25],
         "clf__min_samples_split": [2, 5, 10, 20],
         "clf__min_samples_leaf": [1, 2, 3, 5, 10],
         "clf__criterion": ["gini", "entropy"],
@@ -50,7 +50,7 @@ def cart(X, y):
 
     f2_scorer = make_scorer(fbeta_score, beta=2)
 
-    grid_search = GridSearchCV(pipeline, param_grid, scoring=f2_scorer, cv=5, n_jobs=-1, verbose=1)
+    grid_search = GridSearchCV(pipeline, param_grid, scoring=f2_scorer, cv=StratifiedKFold(5, shuffle=True, random_state=RANDOM_STATE), n_jobs=-1, verbose=1)
 
     start = time()
     grid_search.fit(X, y)

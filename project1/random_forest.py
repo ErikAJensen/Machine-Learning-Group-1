@@ -20,9 +20,10 @@ from sklearn.metrics import (
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.preprocessing import StandardScaler
 
-from constants import DATA_PROCESSED_DIR, RANDOM_STATE
+from constants import DATA_PROCESSED_DIR, MODELS_DIR, RANDOM_STATE
 
-MODEL_FILE = os.path.splitext(os.path.abspath(__file__))[0] + ".pkl"
+MODEL_FILE = os.path.join(MODELS_DIR, str(RANDOM_STATE), "random_forest.pkl")
+
 
 
 def random_forest(X, y):
