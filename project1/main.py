@@ -9,6 +9,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, average_precision_score, f1_score, precision_score, recall_score, roc_auc_score
 from sklearn.preprocessing import StandardScaler
 from sklearn.tree import DecisionTreeClassifier
+from xgboost import XGBClassifier
 
 from constants import DATA_PROCESSED_DIR, MODELS_DIR, RANDOM_STATE
 
@@ -81,6 +82,39 @@ def main():
     print_metrics("Random Forest with ADASYN", y_test, rf_adasyn.predict(X_test), rf_adasyn.predict_proba(X_test)[:, 1])
     print_metrics(
         "Random Forest with ADASYN Hyperparameter Tuned", y_test, rf_ht.predict(X_test), rf_ht.predict_proba(X_test)[:, 1]
+    )
+
+    gb_base = XGBClassifier(random_state=RANDOM_STATE, n_jobs=-1, eval_metric="aucpr")
+
+    gb_base.fit(X_train, y_train)
+
+    gb_adasyn = Pipeline(
+        [
+            (
+                "scaler",
+                ColumnTransformer(
+                    transformers=[("amount_scaler", StandardScaler(), ["Amount"])],
+                    remainder="passthrough",
+                ),
+            ),
+            ("adasyn", ADASYN(random_state=RANDOM_STATE)),
+            ("clf", XGBClassifier(random_state=RANDOM_STATE, n_jobs=-1, eval_metric="aucpr")),
+        ]
+    )
+
+    gb_adasyn.fit(X_train, y_train)
+
+    gb_ht_adasyn = joblib.load(os.path.join(MODELS_DIR, str(RANDOM_STATE), "gb.adasyn.pkl"))
+
+    gb_ht_es = joblib.load(os.path.join(MODELS_DIR, str(RANDOM_STATE), "gb.es.pkl"))
+
+    print_metrics("XGBoost Base", y_test, gb_base.predict(X_test), gb_base.predict_proba(X_test)[:, 1])
+    print_metrics("XGBoost with ADASYN", y_test, gb_adasyn.predict(X_test), gb_adasyn.predict_proba(X_test)[:, 1])
+    print_metrics(
+        "XGBoost with ADASYN Hyperparameter Tuned", y_test, gb_ht_adasyn.predict(X_test), gb_ht_adasyn.predict_proba(X_test)[:, 1]
+    )
+    print_metrics(
+        "XGBoost with Early Stopping Hyperparameter Tuned", y_test, gb_ht_es.predict(X_test), gb_ht_es.predict_proba(X_test)[:, 1]
     )
 
 

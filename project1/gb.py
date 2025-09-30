@@ -4,6 +4,7 @@ from time import time
 
 import joblib
 import pandas as pd
+import sklearn
 from imblearn.over_sampling import ADASYN
 from imblearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
@@ -21,10 +22,12 @@ from sklearn.model_selection import RandomizedSearchCV
 from sklearn.preprocessing import StandardScaler
 from xgboost import XGBClassifier
 
-from constants import DATA_PROCESSED_DIR, RANDOM_STATE
+from constants import DATA_PROCESSED_DIR, MODELS_DIR, RANDOM_STATE
 
-MODEL_FILE_NO_EARLY_STOPPING = os.path.splitext(os.path.abspath(__file__))[0] + "-noes.pkl"
-MODEL_FILE_EARLY_STOPPING = os.path.splitext(os.path.abspath(__file__))[0] + "-es.pkl"
+ES_MODEL_FILE = os.path.join(MODELS_DIR, str(RANDOM_STATE), "gb.es.pkl")
+ADASYN_MODEL_FILE = os.path.join(MODELS_DIR, str(RANDOM_STATE), "gb.adasyn.pkl")
+
+sklearn.set_config(enable_metadata_routing=True)
 
 
 def xgboost_model(X_train, y_train, X_val, y_val):
@@ -34,21 +37,10 @@ def xgboost_model(X_train, y_train, X_val, y_val):
         random_state=RANDOM_STATE,
         n_jobs=-1,
         eval_metric="aucpr",
+        early_stopping_rounds=20,
     )
 
-    pipeline = Pipeline(
-        [
-            (
-                "scaler",
-                ColumnTransformer(
-                    transformers=[("amount_scaler", StandardScaler(), ["Amount"])],
-                    remainder="passthrough",
-                ),
-            ),
-            ("adasyn", ADASYN(random_state=RANDOM_STATE)),
-            ("clf", xgb),
-        ]
-    )
+    xgb.set_fit_request(eval_set=True, verbose=True)
 
     param_grid = {
         "clf__n_estimators": [100, 200, 300],
@@ -63,8 +55,56 @@ def xgboost_model(X_train, y_train, X_val, y_val):
 
     f2_scorer = make_scorer(fbeta_score, beta=2)
 
+    pipeline = Pipeline(
+        [
+            ("clf", xgb),
+        ]
+    )
+
     search = RandomizedSearchCV(
         pipeline,
+        param_distributions=param_grid,
+        scoring=f2_scorer,
+        cv=5,
+        n_jobs=-1,
+        verbose=1,
+        n_iter=600,
+        random_state=RANDOM_STATE,
+    )
+
+    
+
+    start = time()
+    search.fit(X_train, y_train, eval_set=[(X_val, y_val)], verbose=False)
+    end = time()
+
+    print(f"XGB1 Randomized search completed in {end - start:.2f} seconds")
+    print(f"Best hyperparameters: {search.best_params_}")
+
+
+
+    xgb2 = XGBClassifier(
+        random_state=RANDOM_STATE,
+        n_jobs=-1,
+        eval_metric="aucpr",
+    )
+
+    pipeline2 = Pipeline(
+        [
+            (
+                "scaler",
+                ColumnTransformer(
+                    transformers=[("amount_scaler", StandardScaler(), ["Amount"])],
+                    remainder="passthrough",
+                ),
+            ),
+            ("adasyn", ADASYN(random_state=RANDOM_STATE)),
+            ("clf", xgb2),
+        ],
+    )
+
+    search2 = RandomizedSearchCV(
+        pipeline2,
         param_distributions=param_grid,
         scoring=f2_scorer,
         cv=5,
@@ -75,45 +115,14 @@ def xgboost_model(X_train, y_train, X_val, y_val):
     )
 
     start = time()
-    search.fit(X_train, y_train)
+    search2.fit(X_train, y_train)
     end = time()
 
-    print(f"Randomized search completed in {end - start:.2f} seconds")
-    print(f"Best hyperparameters: {search.best_params_}")
+    print(f"XGB2 Randomized search completed in {end - start:.2f} seconds")
+    print(f"Best hyperparameters: {search2.best_params_}")
 
-    best_params = {k.replace("clf__", ""): v for k, v in search.best_params_.items()}
 
-    preprocessor = ColumnTransformer(
-        transformers=[("amount_scaler", StandardScaler(), ["Amount"])],
-        remainder="passthrough",
-    )
-
-    X_train_proc = preprocessor.fit_transform(X_train)
-    X_val_proc = preprocessor.transform(X_val)
-
-    ada = ADASYN(random_state=RANDOM_STATE)
-    X_train_res, y_train_res = ada.fit_resample(X_train_proc, y_train)
-
-    best_xgb = XGBClassifier(
-        random_state=RANDOM_STATE, n_jobs=-1, eval_metric="aucpr", **best_params, early_stopping_rounds=20
-    )
-
-    best_xgb.fit(
-        X_train_res,
-        y_train_res,
-        eval_set=[(X_val_proc, y_val)],
-        verbose=False,
-    )
-
-    final_pipeline = Pipeline(
-        [
-            ("scaler", preprocessor),
-            ("adasyn", ada),
-            ("clf", best_xgb),
-        ]
-    )
-
-    return search.best_estimator_, final_pipeline
+    return search.best_estimator_, search2.best_estimator_
 
 
 def main():
@@ -125,31 +134,23 @@ def main():
     X_val, y_val = val_df.drop(columns=["Class"]), val_df["Class"]
     X_test, y_test = test_df.drop(columns=["Class"]), test_df["Class"]
 
-    a, b = xgboost_model(X_train, y_train, X_val, y_val)
+    best_model_es, best_model_adasyn = xgboost_model(X_train, y_train, X_val, y_val)
 
-    a_y_pred = a.predict(X_test)
-    b_y_pred = b.predict(X_test)
-    a_y_proba = a.predict_proba(X_test)[:, 1]
-    b_y_proba = b.predict_proba(X_test)[:, 1]
+    y_pred = best_model_es.predict(X_test)
+    y_proba = best_model_es.predict_proba(X_test)[:, 1]
 
-    print("\nTest Set Metrics (No Early Stopping):")
-    print(f"Accuracy:  {accuracy_score(y_test, a_y_pred):.4f}")
-    print(f"Precision: {precision_score(y_test, a_y_pred):.4f}")
-    print(f"Recall:    {recall_score(y_test, a_y_pred):.4f}")
-    print(f"F1-score:  {f1_score(y_test, a_y_pred):.4f}")
-    print(f"AUPRC:     {average_precision_score(y_test, a_y_proba):.4f}")
-    print(f"AUROC:     {roc_auc_score(y_test, a_y_proba):.4f}")
+    print("\nTest Set Metrics:")
+    print(f"Accuracy:  {accuracy_score(y_test, y_pred):.4f}")
+    print(f"Precision: {precision_score(y_test, y_pred):.4f}")
+    print(f"Recall:    {recall_score(y_test, y_pred):.4f}")
+    print(f"F1-score:  {f1_score(y_test, y_pred):.4f}")
+    print(f"AUPRC:     {average_precision_score(y_test, y_proba):.4f}")
+    print(f"AUROC:     {roc_auc_score(y_test, y_proba):.4f}")
 
-    print("Test Set Metrics (With Early Stopping):")
-    print(f"Accuracy:  {accuracy_score(y_test, b_y_pred):.4f}")
-    print(f"Precision: {precision_score(y_test, b_y_pred):.4f}")
-    print(f"Recall:    {recall_score(y_test, b_y_pred):.4f}")
-    print(f"F1-score:  {f1_score(y_test, b_y_pred):.4f}")
-    print(f"AUPRC:     {average_precision_score(y_test, b_y_proba):.4f}")
-    print(f"AUROC:     {roc_auc_score(y_test, b_y_proba):.4f}")
+    joblib.dump(best_model_es, ES_MODEL_FILE)
 
-    joblib.dump(a, MODEL_FILE_NO_EARLY_STOPPING)
-    joblib.dump(b, MODEL_FILE_EARLY_STOPPING)
+    joblib.dump(best_model_adasyn, ADASYN_MODEL_FILE)
+
 
 
 if __name__ == "__main__":
