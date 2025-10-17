@@ -3,8 +3,9 @@ from PIL import Image, ImageOps
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # --------- Konfigurasjon ---------
-INPUT_DIR = r"C:\Users\erika\OneDrive\Skrivebord\archive (5)\raw-img"
-OUTPUT_DIR = r"C:\Users\erika\OneDrive\Skrivebord\archive (5)\resized-img"  # Rotmappe der ferdige bilder lagres (samme struktur)
+INPUT_DIR = r"C:\Users\erik\OneDrive - personlig\Skrivebord\archive (3)\raw-img"
+OUTPUT_DIR = r"C:\Users\erik\OneDrive - personlig\Skrivebord\archive (3)\resized-img"  # ny mappe for ferdige bilder
+ # Rotmappe der ferdige bilder lagres (samme struktur)
 
 TARGET_SIZE = (224, 224)        
 PADDING_COLOR = (0, 0, 0)       
