@@ -1,6 +1,3 @@
-# resize_dataset_recursive.py
-# Krever: pip install pillow
-
 from pathlib import Path
 from PIL import Image, ImageOps, ImageFile
 import sys
