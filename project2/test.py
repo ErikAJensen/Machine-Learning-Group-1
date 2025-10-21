@@ -9,7 +9,7 @@ from sklearn.metrics import classification_report, confusion_matrix
 # === KONFIGURASJON ===
 DATA_ROOT = r"C:\Users\erik1\OneDrive\Desktop\archive (3)\resized"
 BATCH_SIZE   = 32
-NUM_WORKERS  = 2   # Sett til 0 hvis du fortsatt får feilmeldinger
+NUM_WORKERS  = 2   
 EPOCHS       = 12
 LR           = 3e-4
 PATIENCE     = 4
