@@ -1,8 +1,6 @@
-import importlib
 import io
 import os
 import shutil
-import sys
 import zipfile
 
 import requests
@@ -68,8 +66,18 @@ def main():
     else:
         print("Data already exists. Skipping download.")
 
-    sys.path.append("./data/raw")
-    translate = getattr(importlib.import_module("translate"), "translate")
+    translate = {
+        "cane": "dog",
+        "cavallo": "horse",
+        "elefante": "elephant",
+        "farfalla": "butterfly",
+        "gallina": "chicken",
+        "gatto": "cat",
+        "mucca": "cow",
+        "pecora": "sheep",
+        "ragno": "spider",
+        "scoiattolo": "squirrel",
+    }
 
     all_image_paths = []
     labels = []
