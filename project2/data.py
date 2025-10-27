@@ -33,7 +33,7 @@ def split_data(all_image_paths, labels, random_state):
         X_temp, y_temp, test_size=0.5, random_state=random_state, stratify=y_temp
     )
 
-    return {"training": (X_train, y_train), "validation": (X_val, y_val), "test": (X_test, y_test)}
+    return {"train": (X_train, y_train), "val": (X_val, y_val), "test": (X_test, y_test)}
 
 
 def write_processed_data(split_data_dict, processed_base_dir, random_seed):

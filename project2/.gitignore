@@ -15,5 +15,7 @@ wheels/
 # data
 data
 
-
+*.tmp
 *.tmp.*
+*.local
+*.local.*
